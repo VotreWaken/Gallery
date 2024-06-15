@@ -22,6 +22,8 @@ if (isset($_POST['slider_select']) && isset($_FILES['images'])) {
 
         move_uploaded_file($file_tmp, $original_path);
 
+        addWatermark($original_path, "images/watermark.png", $original_dir);
+
         $thumbnail_path = $thumbnail_dir . 'thumb_' . $file_name;
         create_thumbnail($original_path, $thumbnail_path, 150, 150);
     }
@@ -33,6 +35,33 @@ if (isset($_POST['slider_select']) && isset($_FILES['images'])) {
 }
 
 echo json_encode($response);
+
+function addWatermark($sourceImagePath, $watermarkImagePath, $outputImagePath)
+{
+  extract(pathinfo($sourceImagePath));
+  $functionCreate = 'imagecreatefrom' . ($extension === 'jpg' ? 'jpeg' : $extension);
+  $image = $functionCreate($sourceImagePath);
+  $watermark = imagecreatefrompng($watermarkImagePath);
+
+  $imageWidth = imagesx($image);
+  $imageHeight = imagesy($image);
+  $watermarkWidth = imagesx($watermark);
+  $watermarkHeight = imagesy($watermark);
+
+  $destX = $imageWidth - $watermarkWidth - 10;
+  $destY = $imageHeight - $watermarkHeight - 10;
+
+  imagecopy($image, $watermark, $destX, $destY, 0, 0, $watermarkWidth, $watermarkHeight);
+
+  $functionSave = 'image' . ($extension === 'jpg' ? 'jpeg' : $extension);
+  if (!file_exists($outputImagePath)) {
+    mkdir($outputImagePath);
+  }
+  $functionSave($image, "$outputImagePath/$basename");
+
+  imagedestroy($image);
+  imagedestroy($watermark);
+}
 
 function create_thumbnail($src, $dest, $desired_width, $desired_height) {
     $source_image = imagecreatefromjpeg($src);
